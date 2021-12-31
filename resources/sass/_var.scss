@@ -1,0 +1,20 @@
+$primary: #F7941D;
+$secondary: #FFD600;
+$contrast: #9f1ae2;
+$accent: #1acc8d;
+$accent_dark: #065172;
+
+$primary_adjacent_light: lighten($primary, 20%);
+$primary_adjacent_dark: darken($primary, 20%);
+
+$button_primary: $primary;
+$button_primary_hover: darken($button_primary, 20%);
+$button_primary_disabled: lighten($button_primary, 45%);
+$button_primary_2: #00ABEB;
+$button_primary_2_hover: darken($button_primary_2, 20%);
+
+$white: #fff;
+$red: #B22B2B;
+$red-dark: darken($red, 15%);
+
+$disabled: #f8f8f8;

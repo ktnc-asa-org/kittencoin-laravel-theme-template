@@ -1,0 +1,4 @@
+node_modules
+vendor
+public/docker_tmp
+.git

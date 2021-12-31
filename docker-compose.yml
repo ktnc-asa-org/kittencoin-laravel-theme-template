@@ -1,0 +1,107 @@
+version: '2.1'
+services:
+
+  # The Application
+  app:
+    image: ktnc-nft-faucet-app
+    container_name: ktnc-nft-faucet-app
+    build:
+      context: ./
+      dockerfile: app.dockerfile
+      args:
+        - WITH_XDEBUG=${WITH_XDEBUG}
+        - XDEBUG_TRIGGER_PROFILER=${XDEBUG_TRIGGER_PROFILER}
+        - XDEBUG_PROFILER_DIR=${XDEBUG_PROFILER_DIR}
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker_tmp:/docker_tmp
+#    networks:
+#      - ktnc-nft-faucet
+    environment:
+      - "DB_PORT=${DB_PORT}"
+      - "DB_HOST=database"
+      - "PHP_IDE_CONFIG=${PHP_IDE_CONFIG}"
+      - "XDEBUG_CONFIG=${XDEBUG_CONFIG}"
+      - "APP_ENV=${APP_ENV}"
+      - "CONTAINER_ROLE=app"
+
+  scheduler:
+    container_name: ktnc-nft-faucet-scheduler
+    depends_on:
+      - app
+    build:
+      context: ./
+      dockerfile: scheduler.dockerfile
+    volumes:
+      - .:/var/www
+    environment:
+      - "DB_PORT=${DB_PORT}"
+      - "DB_HOST=database"
+      - "APP_ENV=${APP_ENV}"
+      - "CONTAINER_ROLE=scheduler"
+
+  # The Web Server
+  web:
+    container_name: ktnc-nft-faucet-web
+    build:
+      context: ./
+      args:
+        - WITH_BASIC_AUTH=${WITH_BASIC_AUTH}
+        - USER1=${BASICAUTH_USER1}
+        - PASS1=${BASICAUTH_PASS1}
+        - USER2=${BASICAUTH_USER2}
+        - PASS2=${BASICAUTH_PASS2}
+      dockerfile: web.dockerfile
+    working_dir: /var/www
+    volumes_from:
+      - app
+    ports:
+      - "${APP_PORT}:80"
+    environment:
+      - "CONTAINER_ROLE=web"
+
+  # The Database
+  database:
+    container_name: ktnc-nft-faucet-db
+    image: mariadb:10.5.8
+    volumes:
+      - dbdata:/var/lib/mysql
+#    networks:
+#      - ktnc-nft-faucet
+    environment:
+      - "MYSQL_DATABASE=${DB_DATABASE}"
+      - "MYSQL_USER=${DB_USERNAME}"
+      - "MYSQL_PASSWORD=${DB_PASSWORD}"
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "TZ=${TIMEZONE}"
+    ports:
+        - "${FORWARD_DB_PORT}:${DB_PORT}"
+
+# Redis
+  redis:
+    image: 'redis:alpine'
+    container_name: ktnc-nft-faucet-redis
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    volumes:
+      - 'redis:/data'
+#    networks:
+#      - ktnc-nft-faucet
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+
+#networks:
+#  ktnc-nft-faucet:
+#    driver: bridge
+
+#  stripemock:
+#    image: 'stripemock/stripe-mock:latest'
+##    networks:
+##      - sail
+
+volumes:
+  dbdata:
+    driver: local
+  redis:
+    driver: local
